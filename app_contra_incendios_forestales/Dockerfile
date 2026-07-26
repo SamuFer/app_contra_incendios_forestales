@@ -1,14 +1,16 @@
-# Etapa de build
+# 1. Construcción
 FROM node:lts-alpine AS build
 WORKDIR /app
 
-COPY package*.json ./
+# Copiamos archivos de configuración desde tu subcarpeta
+COPY app_contra_incendios_forestales/package*.json ./
 RUN npm install
 
-COPY . .
+# Copiamos el resto del código desde tu subcarpeta
+COPY app_contra_incendios_forestales/ .
 RUN npm run build
 
-# Etapa de producción con Nginx
+# 2. Servidor de estáticos con Nginx
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 
