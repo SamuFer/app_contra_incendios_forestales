@@ -1,0 +1,24 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Sidebar from '../components/Sidebar.astro';
+import MapViewer from '../components/MapViewer.astro';
+---
+
+<Layout title="IgnisGuard · app_contra_incendios_forestales">
+  <main class="min-h-screen bg-slate-900 px-4 py-6 sm:px-6 lg:px-8">
+    <div class="mx-auto flex max-w-7xl flex-col gap-6">
+      <Header />
+
+      <section class="grid gap-6 lg:grid-cols-4">
+        <div class="lg:col-span-1">
+          <Sidebar />
+        </div>
+
+        <div class="lg:col-span-3">
+          <MapViewer />
+        </div>
+      </section>
+    </div>
+  </main>
+</Layout>

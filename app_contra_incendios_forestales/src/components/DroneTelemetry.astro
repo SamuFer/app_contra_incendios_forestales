@@ -1,0 +1,92 @@
+<section class="rounded-2xl border border-emerald-500/20 bg-slate-950/90 p-5 shadow-lg shadow-emerald-950/20">
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-xs uppercase tracking-[0.3em] text-emerald-400">Live Demo</p>
+      <h3 class="mt-1 text-lg font-semibold text-emerald-100">Telemetría de Dron</h3>
+    </div>
+    <div class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
+      ONLINE
+    </div>
+  </div>
+
+  <div class="mt-5 space-y-3 font-mono text-sm text-emerald-200">
+    <div class="rounded-xl border border-emerald-500/20 bg-slate-900/80 p-3">
+      <div class="flex items-center justify-between">
+        <span class="text-emerald-400">Estado</span>
+        <span class="font-semibold text-emerald-100">Patrulla Activa</span>
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-emerald-500/20 bg-slate-900/80 p-3">
+      <div class="flex items-center justify-between">
+        <span class="text-emerald-400">Temp. Térmica</span>
+        <span id="telemetry-temp" class="font-semibold text-emerald-100">41.2°C</span>
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-emerald-500/20 bg-slate-900/80 p-3">
+      <div class="flex items-center justify-between">
+        <span class="text-emerald-400">Batería</span>
+        <span id="telemetry-battery" class="font-semibold text-emerald-100">88%</span>
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-emerald-500/20 bg-slate-900/80 p-3">
+      <div class="flex items-center justify-between">
+        <span class="text-emerald-400">GPS</span>
+        <span id="telemetry-gps" class="font-semibold text-emerald-100">40.4168, -3.7038</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const tempElement = document.getElementById('telemetry-temp');
+  const batteryElement = document.getElementById('telemetry-battery');
+  const gpsElement = document.getElementById('telemetry-gps');
+
+  let battery = 88;
+  let latitude = 40.4168;
+  let longitude = -3.7038;
+  let intervalId: number | null = null;
+
+  const updateTelemetry = () => {
+    const temperature = Number((40.5 + Math.random() * 2.3).toFixed(1));
+    battery = Number(Math.max(0, battery - 0.4).toFixed(1));
+    latitude = Number((latitude + (Math.random() > 0.5 ? 0.0004 : -0.0004)).toFixed(4));
+    longitude = Number((longitude + (Math.random() > 0.5 ? 0.0003 : -0.0003)).toFixed(4));
+
+    if (tempElement) tempElement.textContent = `${temperature.toFixed(1)}°C`;
+    if (batteryElement) batteryElement.textContent = `${battery.toFixed(1)}%`;
+    if (gpsElement) gpsElement.textContent = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+  };
+
+  const stopTelemetry = () => {
+    if (intervalId !== null) {
+      window.clearInterval(intervalId);
+      intervalId = null;
+    }
+  };
+
+  const startTelemetry = () => {
+    if (intervalId !== null) return;
+    intervalId = window.setInterval(updateTelemetry, 8000);
+  };
+
+  const handleVisibility = () => {
+    if (document.hidden) {
+      stopTelemetry();
+    } else {
+      startTelemetry();
+    }
+  };
+
+  updateTelemetry();
+  startTelemetry();
+  document.addEventListener('visibilitychange', handleVisibility);
+
+  window.addEventListener('beforeunload', () => {
+    stopTelemetry();
+    document.removeEventListener('visibilitychange', handleVisibility);
+  });
+</script>

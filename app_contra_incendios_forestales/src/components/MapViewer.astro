@@ -1,0 +1,127 @@
+---
+import 'leaflet/dist/leaflet.css';
+---
+
+<section class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/80 shadow-xl shadow-black/20">
+  <div class="border-b border-slate-800 px-4 py-3">
+    <h3 class="text-sm font-semibold text-slate-100">Mapa de Riesgo Forestal</h3>
+    <p class="text-sm text-slate-400">Vista geoespacial de incendios simulados en tiempo real</p>
+  </div>
+  <div id="map" class="h-[480px] w-full"></div>
+</section>
+
+<script>
+  import L from 'leaflet';
+
+  let map: L.Map | null = null;
+  let markerLayer: L.LayerGroup | null = null;
+  // Cambiamos el tipo a ReturnType<typeof setTimeout> para que sea compatible tanto en Node como en Navegador sin errores de TS
+  let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+  let hasInitialized = false;
+
+  interface FireMarker {
+    position: [number, number];
+    title: string;
+    risk: string;
+    color: string;
+  }
+
+  const datasets: Record<string, FireMarker[]> = {
+    '2024': [
+      { position: [42.9, -8.1], title: 'Galicia', risk: 'Alto', color: '#f97316' },
+      { position: [43.35, -8.41], title: 'A Coruña', risk: 'Moderado', color: '#fb923c' },
+      { position: [42.37, -7.85], title: 'Ourense', risk: 'Alto', color: '#f97316' },
+    ],
+    '2025': [
+      { position: [37.39, -5.99], title: 'Sevilla', risk: 'Extremo', color: '#ef4444' },
+      { position: [36.72, -4.42], title: 'Córdoba', risk: 'Alto', color: '#f97316' },
+      { position: [38.98, -3.82], title: 'Granada', risk: 'Medio', color: '#facc15' },
+    ],
+    '2026': [
+      { position: [41.65, -4.72], title: 'Valladolid', risk: 'Extremo', color: '#ef4444' },
+      { position: [42.0, -4.1], title: 'Palencia', risk: 'Alto', color: '#f97316' },
+      { position: [41.3, -5.0], title: 'Salamanca', risk: 'Medio', color: '#facc15' },
+    ],
+  };
+
+  const loadMarkersForYear = (year: string) => {
+    if (!markerLayer) return;
+
+    markerLayer.clearLayers();
+    const points = datasets[year] || datasets['2026'];
+
+    points.forEach((markerData) => {
+      const marker = L.circleMarker(markerData.position, {
+        radius: 10,
+        color: markerData.color,
+        fillColor: markerData.color,
+        fillOpacity: 0.9,
+        weight: 2,
+      }).addTo(markerLayer as L.LayerGroup);
+
+      marker.bindPopup(`<strong>${markerData.title}</strong><br/>Nivel de riesgo: ${markerData.risk}`);
+    });
+  };
+
+  const initMap = () => {
+    if (hasInitialized) return;
+
+    const container = document.getElementById('map');
+    if (!container) return;
+
+    map = L.map('map', {
+      zoomControl: true,
+      preferCanvas: true,
+    }).setView([40.45, -3.7], 5.8);
+
+    // SOLUCIÓN: Eliminamos reuseTiles: true para cumplir con las opciones válidas de Leaflet moderno
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+      subdomains: 'abcd',
+      maxZoom: 20,
+      updateWhenIdle: true,
+    }).addTo(map);
+
+    markerLayer = L.layerGroup().addTo(map);
+    loadMarkersForYear('2026');
+    hasInitialized = true;
+
+    const resizeMap = () => {
+      if (map) {
+        map.invalidateSize();
+      }
+    };
+
+    const handleResize = () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resizeMap, 120);
+    };
+
+    const handleYearChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ year?: string }>;
+      const nextYear = customEvent.detail?.year || '2026';
+      loadMarkersForYear(nextYear);
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('year-change', handleYearChange);
+
+    window.addEventListener('beforeunload', () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('year-change', handleYearChange);
+      if (map) {
+        map.remove();
+        map = null;
+      }
+      markerLayer = null;
+      hasInitialized = false;
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMap, { once: true });
+  } else {
+    initMap();
+  }
+</script>
